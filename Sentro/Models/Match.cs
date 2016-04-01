@@ -9,7 +9,7 @@ namespace Sentro.Models
         public Team Blue { get; set; }
         public int CompareTo(object obj)
         {
-            if (obj == null) // this handily covers the first run of the program
+            if (obj == null)
             {
                 return 1;
             }

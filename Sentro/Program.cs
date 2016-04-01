@@ -25,36 +25,38 @@ namespace Sentro
                 return;
             }
             var cookieContainer = CreateCookieContainer(args);
-            Match lastMatch = null;
+            Match lastMatch = GetLatestMatch(cookieContainer);
 
-            const int MAX_LOOPS = 1000;
+            const int MAX_LOOPS = 1000000;
             int i = 0;
             while (i++ < MAX_LOOPS)
             {
                 var latestMatch = GetLatestMatch(cookieContainer);
                 if (latestMatch.CompareTo(lastMatch) != 0)
                 {
-                    Console.WriteLine("pick side to bet on");
                     // PHASE 2: Return wager or strength indicator
                     var betOn = GetSideToBetOn(latestMatch);
                     var betOnRed = betOn == latestMatch.Red;
                     var itsOn = PlaceBet(cookieContainer, betOnRed);
                     if (itsOn)
                     {
-                        Console.WriteLine("come on you {0}!", betOnRed ? "reds" : "bluebaggers");
+                        Console.WriteLine("Let's go {0}!", betOn.Players[0].Name);
                         lastMatch = latestMatch;
                     }
                     else
                     {
-                        Console.WriteLine("Whoops, too quick on the trigger!");
-                        Thread.Sleep(10000);
-                        var secondTimesACharm = PlaceBet(cookieContainer, betOnRed);
-                        Console.WriteLine("That time was {0}", secondTimesACharm ? "much better!" : "just as potato");
+                        if (i > 1)
+                        {
+                            Console.WriteLine("Whoops, bet didn't go through. Too quick on the trigger?");
+                            Thread.Sleep(10000);
+                            var secondTimesACharm = PlaceBet(cookieContainer, betOnRed);
+                            Console.WriteLine("That time was {0}", secondTimesACharm ? "much better!" : "just as potato");
+                        }
                     }
                 }
 
                 Console.WriteLine("{0}: ResidentSleeper", DateTime.Now);
-                Thread.Sleep(70000);
+                Thread.Sleep(50000);
             }
         }
 
