@@ -43,6 +43,7 @@ namespace Sentro
                 var latestMatch = GetLatestMatch(cookieContainer);
                 if (latestMatch.CompareTo(lastMatch) != 0)
                 {
+                    var latestStats = GetLatestStats(cookieContainer);
                     var red = latestMatch.Red.Players.First();
                     var blue = latestMatch.Blue.Players.First();
                     Console.WriteLine("{0} vs {1} in {2} tier", red.Name, blue.Name, red.Tier);
@@ -50,7 +51,7 @@ namespace Sentro
                     var balance = GetBalance(cookieContainer);
                     var bet = GetBet(latestMatch, mode, BASE_WAGER, balance);
                     var betOnRed = bet.Team == latestMatch.Red;
-                    var itsOn = PlaceBet(cookieContainer, betOnRed, bet.Wager);
+                    var itsOn = PlaceBet(cookieContainer, betOnRed, bet.Wager, mode);
                     if (itsOn)
                     {
                         Console.WriteLine("{0}, I choose you!", betOnRed ? red.Name : blue.Name);
@@ -63,7 +64,7 @@ namespace Sentro
             }
         }
 
-        private static bool PlaceBet(CookieContainer cookieContainer, bool betOnRed, int wager = 1)
+        private static bool PlaceBet(CookieContainer cookieContainer, bool betOnRed, int wager, Mode mode)
         {
             var request = (HttpWebRequest)WebRequest.Create("http://www.saltybet.com/ajax_place_bet.php");
             request.CookieContainer = cookieContainer;
@@ -85,7 +86,7 @@ namespace Sentro
 
             var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
 
-            return responseString != "0"; // Matchmaking returns 1 (success) or 0 (failure). Tourneys return a random number (4-5 digits) on success so dunno.
+            return mode != Mode.Tournament ? responseString == "1" : responseString != "0"; // Matchmaking returns 1 (success) or 0 (failure). Tourneys return a random number (4-5 digits) on success so dunno.
         }
 
         private static Bet GetBet(Match latestMatch, Mode mode, int baseWager, int? balance)
@@ -164,7 +165,7 @@ namespace Sentro
             return cookieContainer;
         }
 
-        private static Match GetLatestMatch(CookieContainer cookieContainer)
+        private static Match GetLatestStats(CookieContainer cookieContainer)
         {
             Match match = null;
             var request = (HttpWebRequest)WebRequest.Create("http://www.saltybet.com/ajax_get_stats.php");
@@ -263,6 +264,78 @@ namespace Sentro
                 }
             }
 
+            return match;
+        }
+
+        private static Match GetLatestMatch(CookieContainer cookieContainer)
+        {
+            Match match = null;
+            var request = (HttpWebRequest)WebRequest.Create("http://www.saltybet.com/state.json");
+            request.CookieContainer = cookieContainer;
+            var response = (HttpWebResponse)request.GetResponse();
+            using (var respStream = response.GetResponseStream())
+            {
+                if (respStream != null)
+                {
+                    var encoding = Encoding.GetEncoding("utf-8");
+                    var streamReader = new StreamReader(respStream, encoding);
+
+                    var content = streamReader.ReadToEnd();
+                    var dto = JsonConvert.DeserializeObject<ModeDTO>(content);
+                    if (dto == null)
+                    {
+                        Console.WriteLine("Couldn't get stats. Are you a non-Illuminati or something?");
+                    }
+                    else
+                    {
+                        var redCaptain = new Player
+                        {
+                            Name = dto.p1name.Split('/').First().Trim(),
+                        };
+
+                        var blueCaptain = new Player
+                        {
+                            Name = dto.p2name.Split('/').First().Trim(),
+                        };
+
+                        match = new Match
+                        {
+                            Red = new Team { Players = new List<Player> { redCaptain } },
+                            Blue = new Team { Players = new List<Player> { blueCaptain } },
+                        };
+
+                        Player redSidekick = null;
+                        if (dto.p1name.Split('/').LastOrDefault() != null)
+                        {
+                            // 2+ player exhibition match
+                            redSidekick = new Player
+                            {
+                                Name = dto.p1name.Split('/').Last().Trim(),
+                            };
+                        }
+
+                        Player blueSidekick = null;
+                        if (dto.p2name.Split('/').LastOrDefault() != null)
+                        {
+                            // 2+ player exhibition match
+                            blueSidekick = new Player
+                            {
+                                Name = dto.p2name.Split('/').Last().Trim(),
+                            };
+                        }
+
+                        if (redSidekick != null)
+                        {
+                            match.Red.Players.Add(redSidekick);
+                        }
+
+                        if (blueSidekick != null)
+                        {
+                            match.Blue.Players.Add(blueSidekick);
+                        }
+                    }
+                }
+            }
             return match;
         }
 

@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace Sentro.Models
 {
-    public class Match : IComparable
+    public class Match
     {
         public Team Red { get; set; }
         public Team Blue { get; set; }
