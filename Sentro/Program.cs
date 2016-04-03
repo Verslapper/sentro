@@ -17,12 +17,12 @@ namespace Sentro
 {
     class Program
     {
-        const int BASE_WAGER = 1;
+        const int BASE_WAGER = 10000;
         const int MAX_LOOPS = 1000000;
         const int CLEAR_FAVOURITE_DIFFERENCE = 40;
         const int UPSET_POTENTIAL_DIFFERENCE = 5;
-        const int MINES_ALL_IN_UNTIL = 20000;
-        const int TOURNEY_ALL_IN_UNTIL = 20000;
+        const int MINES_ALL_IN_UNTIL = 50000;
+        const int TOURNEY_ALL_IN_UNTIL = 30000;
 
         static void Main(string[] args)
         {
@@ -43,14 +43,14 @@ namespace Sentro
                 var latestMatch = GetLatestMatch(cookieContainer);
                 if (latestMatch.CompareTo(lastMatch) != 0)
                 {
-                    var latestStats = GetLatestStats(cookieContainer);
-                    var red = latestMatch.Red.Players.First();
-                    var blue = latestMatch.Blue.Players.First();
-                    Console.WriteLine("{0} vs {1} in {2} tier", red.Name, blue.Name, red.Tier);
+                    var latestStats = GetLatestStats(cookieContainer) ?? latestMatch;
+                    var red = latestStats.Red.Players.First();
+                    var blue = latestStats.Blue.Players.First();
+                    Console.WriteLine("{0} vs {1}", red.Name, blue.Name);
                     var mode = GetMode(cookieContainer);
                     var balance = GetBalance(cookieContainer);
-                    var bet = GetBet(latestMatch, mode, BASE_WAGER, balance);
-                    var betOnRed = bet.Team == latestMatch.Red;
+                    var bet = GetBet(latestStats, mode, BASE_WAGER, balance);
+                    var betOnRed = bet.Team == latestStats.Red; // do latestMatch for non-illuminati
                     var itsOn = PlaceBet(cookieContainer, betOnRed, bet.Wager, mode);
                     if (itsOn)
                     {
@@ -93,6 +93,7 @@ namespace Sentro
         {
             var red = latestMatch.Red.Players.First();
             var blue = latestMatch.Blue.Players.First();
+            Console.WriteLine("{0} {1}% vs {2} {3}%", red.Name, red.Winrate, blue.Name, blue.Winrate);
             Team betOn;
             var wager = baseWager;
 
@@ -128,19 +129,23 @@ namespace Sentro
                 wager = baseWager * 3;
             }
 
+            Console.WriteLine("Standard algorithm says bet {0}", betOn.Players.First().Name);
+
             // Go conservative for exhibs
             if (mode == Mode.Exhibitions)
             {
-                wager = baseWager;
+                wager = 1;
             }
 
             if (mode == Mode.Tournament && balance.HasValue && balance.Value < TOURNEY_ALL_IN_UNTIL)
             {
+                Console.WriteLine("Pump it up! ${0} It's tourney time!", balance.Value);
                 wager = balance.Value;
             }
             else if (balance.HasValue && balance.Value < MINES_ALL_IN_UNTIL)
             {
                 betOn = blue.Winrate <= red.Winrate ? latestMatch.Blue : latestMatch.Red; // bet underdog
+                Console.WriteLine("We in the jungle baby, you goin' ${0} all in on the shitty one, {1}!", balance.Value, betOn.Players.First().Name);
                 wager = balance.Value;
             }
 
@@ -217,8 +222,7 @@ namespace Sentro
                         };
 
                         Player redSidekick = null;
-                        int winrate;
-                        if (Int32.TryParse(dto.p2winrate.Split('/').LastOrDefault(), out winrate))
+                        if (dto.p1winrate.Split('/').Length == 2)
                         {
                             // 2+ player exhibition match
                             redSidekick = new Player
@@ -235,7 +239,7 @@ namespace Sentro
                         }
 
                         Player blueSidekick = null;
-                        if (Int32.TryParse(dto.p2winrate.Split('/').LastOrDefault(), out winrate))
+                        if (dto.p2winrate.Split('/').Length == 2)
                         {
                             // 2+ player exhibition match
                             blueSidekick = new Player
@@ -354,7 +358,7 @@ namespace Sentro
 
                     var content = streamReader.ReadToEnd();
                     var dto = JsonConvert.DeserializeObject<ModeDTO>(content);
-                    if (dto.remaining.Contains("until the next tournament") || dto.remaining.Contains("Matchmaking mode has been"))
+                    if (dto.remaining.Contains("until the next tournament") || dto.remaining.Contains("Matchmaking mode has been") || dto.remaining.Contains("Tournament mode will be"))
                     {
                         mode = Mode.Matchmaking;
                     }
