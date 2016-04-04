@@ -18,7 +18,7 @@ namespace Sentro
 {
     class Program
     {
-        const int BASE_WAGER = 1;
+        const int BASE_WAGER = 10000;
         const int MAX_LOOPS = 1000000;
         const int CLEAR_FAVOURITE_DIFFERENCE = 40;
         const int UPSET_POTENTIAL_DIFFERENCE = 5;
@@ -29,7 +29,6 @@ namespace Sentro
 
         static void Main(string[] args)
         {
-            // initialise with cookie from args (e.g. __cfduid=dd3567adc0bc7998fde01064741f2789a1456980891; _ga=GA1.2.309934278.1456987010; PHPSESSID=s73psg9qotrds7elqbisto0447)
             var cookieArg = args.FirstOrDefault();
             if (string.IsNullOrWhiteSpace(cookieArg))
             {
@@ -47,22 +46,19 @@ namespace Sentro
                 if (latestMatch.CompareTo(lastMatch) != 0)
                 {
                     var latestStats = GetLatestStats(cookieContainer) ?? latestMatch;
-                    var red = latestStats.Red.Players.First();
-                    var blue = latestStats.Blue.Players.First();
                     var mode = GetMode(cookieContainer);
-                    var balance = GetBalance(cookieContainer);
-                    var bet = GetBet(latestStats, mode, BASE_WAGER, balance);
+                    var bet = GetBet(latestStats, mode, BASE_WAGER, GetBalance(cookieContainer));
                     var betOnRed = bet.Team == latestStats.Red;
                     var itsOn = PlaceBet(cookieContainer, betOnRed, bet.Wager, mode);
                     if (itsOn)
                     {
-                        Console.WriteLine("{0}, I choose you!", betOnRed ? red.Name : blue.Name);
+                        Console.WriteLine("{0}, I choose you!", betOnRed ? latestStats.Red.Players.First().Name : latestStats.Blue.Players.First().Name);
                         lastMatch = latestMatch;
                     }
                 }
 
                 Console.WriteLine("{0}: ResidentSleeper", DateTime.Now);
-                Thread.Sleep(36000);
+                Thread.Sleep(35000);
             }
         }
 
@@ -88,7 +84,8 @@ namespace Sentro
 
             var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
 
-            return mode != Mode.Tournament ? responseString == "1" : responseString != "0"; // Matchmaking returns 1 (success) or 0 (failure). Tourneys return a random number (4-5 digits) on success so dunno.
+            // Matchmaking returns 1 (success) or 0 (failure). Tourneys return a random number (4-5 digits) on success so dunno.
+            return mode != Mode.Tournament ? responseString == "1" : responseString != "0"; 
         }
 
         private static Bet GetBet(Match latestMatch, Mode mode, int baseWager, int? balance)
@@ -110,12 +107,12 @@ namespace Sentro
                 if (red.Winrate - blue.Winrate > UPSET_POTENTIAL_DIFFERENCE)
                 {
                     betOn = latestMatch.Red;
-                    wager = red.Winrate - blue.Winrate > CLEAR_FAVOURITE_DIFFERENCE ? baseWager * 10 : baseWager;
+                    wager = red.Winrate - blue.Winrate > CLEAR_FAVOURITE_DIFFERENCE ? Math.Min(baseWager * 10, balance.HasValue ? balance.Value : baseWager * 10) : baseWager;
                 }
                 else if (blue.Winrate - red.Winrate > UPSET_POTENTIAL_DIFFERENCE)
                 {
                     betOn = latestMatch.Blue;
-                    wager = blue.Winrate - red.Winrate > CLEAR_FAVOURITE_DIFFERENCE ? baseWager * 10 : baseWager;
+                    wager = blue.Winrate - red.Winrate > CLEAR_FAVOURITE_DIFFERENCE ? Math.Min(baseWager * 10, balance.HasValue ? balance.Value : baseWager * 10) : baseWager;
                 }
                 else if (red.Meter - blue.Meter >= 500)
                 {
@@ -136,7 +133,7 @@ namespace Sentro
                 else // this bets upset by default in close matches
                 {
                     betOn = blue.Winrate <= red.Winrate ? latestMatch.Blue : latestMatch.Red;
-                    wager = baseWager * 3;
+                    wager = Math.Min(baseWager * 3, balance.HasValue ? balance.Value : baseWager * 3);
                 }
             }
 
