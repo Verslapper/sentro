@@ -11,18 +11,21 @@ using Newtonsoft.Json;
 using Sentro.DTOs;
 using Sentro.Enums;
 using Sentro.Models;
+using Sentro.Services;
 using Match = Sentro.Models.Match;
 
 namespace Sentro
 {
     class Program
     {
-        const int BASE_WAGER = 10000;
+        const int BASE_WAGER = 1;
         const int MAX_LOOPS = 1000000;
         const int CLEAR_FAVOURITE_DIFFERENCE = 40;
         const int UPSET_POTENTIAL_DIFFERENCE = 5;
         const int MINES_ALL_IN_UNTIL = 50000;
         const int TOURNEY_ALL_IN_UNTIL = 30000;
+
+        private static readonly NameBasedRecommendationService _nameBasedRecommendationService = new NameBasedRecommendationService();
 
         static void Main(string[] args)
         {
@@ -46,11 +49,10 @@ namespace Sentro
                     var latestStats = GetLatestStats(cookieContainer) ?? latestMatch;
                     var red = latestStats.Red.Players.First();
                     var blue = latestStats.Blue.Players.First();
-                    Console.WriteLine("{0} vs {1}", red.Name, blue.Name);
                     var mode = GetMode(cookieContainer);
                     var balance = GetBalance(cookieContainer);
                     var bet = GetBet(latestStats, mode, BASE_WAGER, balance);
-                    var betOnRed = bet.Team == latestStats.Red; // do latestMatch for non-illuminati
+                    var betOnRed = bet.Team == latestStats.Red;
                     var itsOn = PlaceBet(cookieContainer, betOnRed, bet.Wager, mode);
                     if (itsOn)
                     {
@@ -97,36 +99,45 @@ namespace Sentro
             Team betOn;
             var wager = baseWager;
 
-            if (red.Winrate - blue.Winrate > UPSET_POTENTIAL_DIFFERENCE)
+            if (red.Winrate == 0 && blue.Winrate == 0)
             {
-                betOn = latestMatch.Red;
-                wager = red.Winrate - blue.Winrate > CLEAR_FAVOURITE_DIFFERENCE ? baseWager * 10 : baseWager;
+                // Name analysis (non-illuminati)
+                betOn = _nameBasedRecommendationService.GetTextOnlyRecommendedBet(latestMatch);
             }
-            else if (blue.Winrate - red.Winrate > UPSET_POTENTIAL_DIFFERENCE)
+            else
             {
-                betOn = latestMatch.Blue;
-                wager = blue.Winrate - red.Winrate > CLEAR_FAVOURITE_DIFFERENCE ? baseWager * 10 : baseWager;
-            }
-            else if (red.Meter - blue.Meter >= 500)
-            {
-                betOn = latestMatch.Red;
-            }
-            else if (blue.Meter - red.Meter >= 500)
-            {
-                betOn = latestMatch.Blue;
-            }
-            else if (red.Life - blue.Life >= 800)
-            {
-                betOn = latestMatch.Red;
-            }
-            else if (blue.Life - red.Life >= 800) 
-            {
-                betOn = latestMatch.Blue;
-            }
-            else // this bets upset by default in close matches
-            {
-                betOn = blue.Winrate <= red.Winrate ? latestMatch.Blue : latestMatch.Red;
-                wager = baseWager * 3;
+                // Stats analysis (Illuminati)
+                if (red.Winrate - blue.Winrate > UPSET_POTENTIAL_DIFFERENCE)
+                {
+                    betOn = latestMatch.Red;
+                    wager = red.Winrate - blue.Winrate > CLEAR_FAVOURITE_DIFFERENCE ? baseWager * 10 : baseWager;
+                }
+                else if (blue.Winrate - red.Winrate > UPSET_POTENTIAL_DIFFERENCE)
+                {
+                    betOn = latestMatch.Blue;
+                    wager = blue.Winrate - red.Winrate > CLEAR_FAVOURITE_DIFFERENCE ? baseWager * 10 : baseWager;
+                }
+                else if (red.Meter - blue.Meter >= 500)
+                {
+                    betOn = latestMatch.Red;
+                }
+                else if (blue.Meter - red.Meter >= 500)
+                {
+                    betOn = latestMatch.Blue;
+                }
+                else if (red.Life - blue.Life >= 800)
+                {
+                    betOn = latestMatch.Red;
+                }
+                else if (blue.Life - red.Life >= 800) 
+                {
+                    betOn = latestMatch.Blue;
+                }
+                else // this bets upset by default in close matches
+                {
+                    betOn = blue.Winrate <= red.Winrate ? latestMatch.Blue : latestMatch.Red;
+                    wager = baseWager * 3;
+                }
             }
 
             Console.WriteLine("Standard algorithm says bet {0}", betOn.Players.First().Name);
@@ -187,7 +198,7 @@ namespace Sentro
                     var dto = JsonConvert.DeserializeObject<MatchDTO>(content);
                     if (dto == null)
                     {
-                        Console.WriteLine("Couldn't get stats. Are you a non-Illuminati or something?");
+                        Console.WriteLine("Couldn't get stats. Non-illuminati mode engage!");
                     }
                     else
                     {
