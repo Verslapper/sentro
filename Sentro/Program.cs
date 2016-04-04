@@ -13,13 +13,12 @@ using Sentro.Enums;
 using Sentro.Models;
 using Sentro.Services;
 using Match = Sentro.Models.Match;
+using System.Configuration;
 
 namespace Sentro
 {
     class Program
     {
-        const int BASE_WAGER = 10000;
-        const int MAX_LOOPS = 1000000;
         const int CLEAR_FAVOURITE_DIFFERENCE = 40;
         const int UPSET_POTENTIAL_DIFFERENCE = 5;
         const int MINES_ALL_IN_UNTIL = 50000;
@@ -39,8 +38,13 @@ namespace Sentro
             var cookieContainer = CreateCookieContainer(args);
             var lastMatch = GetLatestMatch(cookieContainer);
 
-            var i = 0;
-            while (i++ < MAX_LOOPS)
+            int BASE_WAGER;
+            if (!Int32.TryParse(ConfigurationManager.AppSettings["baseWager"], out BASE_WAGER))
+            {
+                BASE_WAGER = 1;
+            }
+            
+            while (true)
             {
                 var latestMatch = GetLatestMatch(cookieContainer);
                 if (latestMatch.CompareTo(lastMatch) != 0)
