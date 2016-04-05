@@ -19,12 +19,9 @@ namespace Sentro
 {
     class Program
     {
-        const int CLEAR_FAVOURITE_DIFFERENCE = 40;
-        const int UPSET_POTENTIAL_DIFFERENCE = 5;
-        const int MINES_ALL_IN_UNTIL = 50000;
-        const int TOURNEY_ALL_IN_UNTIL = 30000;
-
         private static readonly NameBasedRecommendationService _nameBasedRecommendationService = new NameBasedRecommendationService();
+        private static readonly StatBasedRecommendationService _statBasedRecommendationService = new StatBasedRecommendationService();
+        private static readonly BetModifierService _betModifierService = new BetModifierService();
 
         static void Main(string[] args)
         {
@@ -105,71 +102,22 @@ namespace Sentro
             var red = latestMatch.Red.Players.First();
             var blue = latestMatch.Blue.Players.First();
             Console.WriteLine("{0} {1}% vs {2} {3}%", red.Name, red.Winrate, blue.Name, blue.Winrate);
-            Team betOn;
-            var wager = baseWager;
+            var bet = new Bet { Wager = baseWager};
 
             if (red.Winrate == 0 && blue.Winrate == 0)
             {
                 // Name analysis (non-illuminati)
-                betOn = _nameBasedRecommendationService.GetTextOnlyRecommendedBet(latestMatch);
+                bet.Team = _nameBasedRecommendationService.GetTextOnlyRecommendedBet(latestMatch);
             }
             else
             {
                 // Stats analysis (Illuminati)
-                if (red.Winrate - blue.Winrate > UPSET_POTENTIAL_DIFFERENCE)
-                {
-                    betOn = latestMatch.Red;
-                    wager = red.Winrate - blue.Winrate > CLEAR_FAVOURITE_DIFFERENCE ? Math.Min(baseWager * 10, balance.HasValue ? balance.Value : baseWager * 10) : baseWager;
-                }
-                else if (blue.Winrate - red.Winrate > UPSET_POTENTIAL_DIFFERENCE)
-                {
-                    betOn = latestMatch.Blue;
-                    wager = blue.Winrate - red.Winrate > CLEAR_FAVOURITE_DIFFERENCE ? Math.Min(baseWager * 10, balance.HasValue ? balance.Value : baseWager * 10) : baseWager;
-                }
-                else if (red.Meter - blue.Meter >= 500)
-                {
-                    betOn = latestMatch.Red;
-                }
-                else if (blue.Meter - red.Meter >= 500)
-                {
-                    betOn = latestMatch.Blue;
-                }
-                else if (red.Life - blue.Life >= 800)
-                {
-                    betOn = latestMatch.Red;
-                }
-                else if (blue.Life - red.Life >= 800) 
-                {
-                    betOn = latestMatch.Blue;
-                }
-                else // this bets upset by default in close matches
-                {
-                    betOn = blue.Winrate <= red.Winrate ? latestMatch.Blue : latestMatch.Red;
-                    wager = Math.Min(baseWager * 3, balance.HasValue ? balance.Value : baseWager * 3);
-                }
+                bet = _statBasedRecommendationService.GetRecommendedBet(latestMatch, baseWager, balance);
             }
 
-            Console.WriteLine("Standard algorithm says bet {0}", betOn.Players.First().Name);
+            Console.WriteLine("Standard algorithm says bet {0}", bet.Team.Players.First().Name);
 
-            // Go conservative for exhibs
-            if (mode == Mode.Exhibitions)
-            {
-                wager = 1;
-            }
-
-            if (mode == Mode.Tournament && balance.HasValue && balance.Value < TOURNEY_ALL_IN_UNTIL)
-            {
-                Console.WriteLine("Pump it up! ${0} It's tourney time!", balance.Value);
-                wager = balance.Value;
-            }
-            else if (balance.HasValue && balance.Value < MINES_ALL_IN_UNTIL)
-            {
-                betOn = blue.Winrate <= red.Winrate ? latestMatch.Blue : latestMatch.Red; // bet underdog
-                Console.WriteLine("We in the jungle baby, you goin' ${0} all in on the shitty one, {1}!", balance.Value, betOn.Players.First().Name);
-                wager = balance.Value;
-            }
-
-            return new Bet { Team = betOn, Wager = wager };
+            return _betModifierService.ApplySituation(bet, mode, balance, latestMatch);
         }
 
         private static CookieContainer CreateCookieContainer(IEnumerable<string> cookieArgs)
