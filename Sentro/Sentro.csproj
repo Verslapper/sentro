@@ -50,6 +50,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DTOs\Chat\ChatHistoryDTO.cs" />
+    <Compile Include="DTOs\Chat\ChatMessageDTO.cs" />
+    <Compile Include="DTOs\Chat\ChatUserDTO.cs" />
     <Compile Include="DTOs\MatchDTO.cs" />
     <Compile Include="DTOs\ModeDTO.cs" />
     <Compile Include="Enums\Mode.cs" />

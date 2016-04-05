@@ -14,6 +14,7 @@ using Sentro.Models;
 using Sentro.Services;
 using Match = Sentro.Models.Match;
 using System.Configuration;
+using Sentro.DTOs.Chat;
 
 namespace Sentro
 {
@@ -34,15 +35,18 @@ namespace Sentro
             }
             var cookieContainer = CreateCookieContainer(args);
             var lastMatch = GetLatestMatch(cookieContainer);
+            var lastStreak = string.Empty;
 
             int BASE_WAGER;
-            if (!Int32.TryParse(ConfigurationManager.AppSettings["baseWager"], out BASE_WAGER))
+            if (!int.TryParse(ConfigurationManager.AppSettings["baseWager"], out BASE_WAGER))
             {
                 BASE_WAGER = 1;
             }
             
             while (true)
             {
+                lastStreak = GetChatHighlights(lastStreak, lastMatch);
+
                 var latestMatch = GetLatestMatch(cookieContainer);
                 if (latestMatch.CompareTo(lastMatch) != 0)
                 {
@@ -61,6 +65,65 @@ namespace Sentro
                 Console.WriteLine("{0}: ResidentSleeper", DateTime.Now);
                 Thread.Sleep(35000);
             }
+        }
+
+        private static string GetChatHighlights(string lastStreak, Match match)
+        {
+            var content = string.Empty;
+
+            try
+            {
+                var request = (HttpWebRequest)WebRequest.Create("https://api.betterttv.net/2/channels/saltybet/history");
+                var response = (HttpWebResponse)request.GetResponse();
+                using (var respStream = response.GetResponseStream())
+                {
+                    if (respStream != null)
+                    {
+                        var encoding = Encoding.GetEncoding("utf-8");
+                        var streamReader = new StreamReader(respStream, encoding);
+                        content = streamReader.ReadToEnd();
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Error while getting streak / chat history. {0} {1} {2}", e.Message, e.InnerException, e.StackTrace);
+            }
+            
+            var dto = JsonConvert.DeserializeObject<ChatHistoryDTO>(content);
+            if (dto == null)
+            {
+                Console.WriteLine("Couldn't parse streak / chat history");
+            }
+            else
+            {
+                //Team JaredKun wins! Payouts to Team Blue. 13 exhibition matches left!
+                //Bets are locked. Zelos(you-ki_ai) (-1) - $297,013, Deathscythe (2) - $914,811
+                var winMessages = dto.Messages.Where(m => m.User.Name == "waifu4u" && m.Message.Contains("wins!"));
+                var streakMessages = dto.Messages.Where(m => m.User.Name == "waifu4u" && m.Message.Contains("are locked"));
+                foreach (var message in winMessages)
+                {
+                    Console.WriteLine("{0}", message.Message);
+                }
+
+                foreach (var message in streakMessages)
+                {
+                    if (message.Message != lastStreak)
+                    {
+                        Console.WriteLine("{0}", message.Message);
+                        lastStreak = message.Message;
+                        var splits = message.Message.Split(new string[] { ") - $" }, StringSplitOptions.RemoveEmptyEntries);
+                        var redStreak = splits[0].Split('(').Last();
+                        var blueStreak = splits[1].Split('(').Last();
+                        var redSubset = splits[0].Replace("Bets are locked. ", "");
+                        var redName = redSubset.Substring(0, redSubset.LastIndexOf('(') - 1);
+                        var blueName = splits[1].Substring(0, splits[1].LastIndexOf('(') - 1);
+                        Console.WriteLine("{0}|{1}|{2}|{3}|{4}", redName, redStreak, blueName, match.Blue.Players.First().Name, blueStreak);
+                    }
+                }
+            }
+
+            return lastStreak;
         }
 
         private static bool PlaceBet(CookieContainer cookieContainer, bool betOnRed, int wager, Mode mode)
@@ -126,11 +189,6 @@ namespace Sentro
             foreach (var cookieCollectionPart in cookieArgs)
             {
                 var cookieParts = cookieCollectionPart.Replace(";","").Split('=');
-                if (cookieParts.Length != 2)
-                {
-                    Console.WriteLine("Missing a cookie key/value");
-                }
-
                 var target = new Uri("http://www.saltybet.com/");
                 var cookie = new Cookie(cookieParts[0], cookieParts[1]) { Domain = target.Host };
                 cookieContainer.Add(cookie);
