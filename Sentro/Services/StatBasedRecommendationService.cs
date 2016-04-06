@@ -7,11 +7,8 @@ namespace Sentro.Services
 {
     public class StatBasedRecommendationService
     {
-        public Bet GetRecommendedBet(Match latestMatch, int baseWager, int? balance)
+        public Bet GetRecommendedBet(Match match, int baseWager, int? balance)
         {
-            var red = latestMatch.Red.Players.First();
-            var blue = latestMatch.Blue.Players.First();
-
             int UPSET_POTENTIAL_DIFFERENCE;
             if (!Int32.TryParse(ConfigurationManager.AppSettings["upsetPotentialDifference"], out UPSET_POTENTIAL_DIFFERENCE))
             {
@@ -33,28 +30,44 @@ namespace Sentro.Services
             Team betOn;
             var wager = baseWager;
             var multiplier = 1;
-
-            if (red.Winrate - blue.Winrate > UPSET_POTENTIAL_DIFFERENCE)
+            var red = match.Red.Players.First();
+            var blue = match.Blue.Players.First();
+            var redWinrate = match.Red.Players.First().Winrate;
+            if (match.Red.Players.Count == 2)
             {
-                betOn = latestMatch.Red;
-                if (red.Winrate - blue.Winrate > CLEAR_FAVOURITE_DIFFERENCE)
+                redWinrate += match.Red.Players.Last().Winrate;
+                Console.WriteLine("Second red player has {0}%", match.Red.Players.Last().Winrate);
+                redWinrate = redWinrate / 2;
+                Console.WriteLine("Averaged red to {0}%", redWinrate);
+            }
+            var blueWinrate = match.Blue.Players.First().Winrate;
+            if (match.Blue.Players.Count == 2)
+            {
+                blueWinrate += match.Blue.Players.Last().Winrate;
+                blueWinrate = blueWinrate / 2;
+            }
+
+            if (redWinrate - blueWinrate > UPSET_POTENTIAL_DIFFERENCE)
+            {
+                betOn = match.Red;
+                if (redWinrate - blueWinrate > CLEAR_FAVOURITE_DIFFERENCE)
                 {
                     multiplier = 10;
                 }
-                else if (red.Winrate - blue.Winrate > SOLID_FAVOURITE_DIFFERENCE)
+                else if (redWinrate - blueWinrate > SOLID_FAVOURITE_DIFFERENCE)
                 {
                     multiplier = 3;
                 }
                 wager = Math.Min(baseWager * multiplier, balance.HasValue ? balance.Value : baseWager * multiplier);
             }
-            else if (blue.Winrate - red.Winrate > UPSET_POTENTIAL_DIFFERENCE)
+            else if (blueWinrate - redWinrate > UPSET_POTENTIAL_DIFFERENCE)
             {
-                betOn = latestMatch.Blue;
-                if (blue.Winrate - red.Winrate > CLEAR_FAVOURITE_DIFFERENCE)
+                betOn = match.Blue;
+                if (blueWinrate - redWinrate > CLEAR_FAVOURITE_DIFFERENCE)
                 {
                     multiplier = 10;
                 }
-                else if (blue.Winrate - red.Winrate > SOLID_FAVOURITE_DIFFERENCE)
+                else if (blueWinrate - redWinrate > SOLID_FAVOURITE_DIFFERENCE)
                 {
                     multiplier = 3;
                 }
@@ -62,23 +75,23 @@ namespace Sentro.Services
             }
             else if (red.Meter - blue.Meter >= 500)
             {
-                betOn = latestMatch.Red;
+                betOn = match.Red;
             }
             else if (blue.Meter - red.Meter >= 500)
             {
-                betOn = latestMatch.Blue;
+                betOn = match.Blue;
             }
             else if (red.Life - blue.Life >= 800)
             {
-                betOn = latestMatch.Red;
+                betOn = match.Red;
             }
             else if (blue.Life - red.Life >= 800)
             {
-                betOn = latestMatch.Blue;
+                betOn = match.Blue;
             }
             else // this bets upset by default in close matches
             {
-                betOn = blue.Winrate <= red.Winrate ? latestMatch.Blue : latestMatch.Red;
+                betOn = blueWinrate <= redWinrate ? match.Blue : match.Red;
                 wager = Math.Min(baseWager * 3, balance.HasValue ? balance.Value : baseWager * 3);
             }
 

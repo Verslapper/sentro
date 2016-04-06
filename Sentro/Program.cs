@@ -23,6 +23,7 @@ namespace Sentro
         private static readonly NameBasedRecommendationService _nameBasedRecommendationService = new NameBasedRecommendationService();
         private static readonly StatBasedRecommendationService _statBasedRecommendationService = new StatBasedRecommendationService();
         private static readonly BetModifierService _betModifierService = new BetModifierService();
+        private static readonly StreakService _streakService = new StreakService();
 
         static void Main(string[] args)
         {
@@ -121,6 +122,11 @@ namespace Sentro
                             var redName = redSubset.Substring(0, redSubset.LastIndexOf('(') - 1);
                             var blueName = splits[1].Substring(0, splits[1].LastIndexOf('(') - 1);
                             Console.WriteLine("{0}|{1}|{2}|{3}|{4}|{5}", redName, match.Red.Players.First().Name, redStreak, blueName, match.Blue.Players.First().Name, blueStreak);
+                            if (redName == match.Red.Players.First().Name) // confirmed that waifu4u message refers to last round of betting
+                            {
+                                _streakService.Save(new PlayerStreak { Player = match.Red.Players.First(), Streak = int.Parse(redStreak) });
+                                _streakService.Save(new PlayerStreak { Player = match.Blue.Players.First(), Streak = int.Parse(blueStreak) });
+                            }
                         }
                     }
                 }

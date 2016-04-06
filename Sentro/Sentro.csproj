@@ -56,15 +56,19 @@
     <Compile Include="DTOs\MatchDTO.cs" />
     <Compile Include="DTOs\ModeDTO.cs" />
     <Compile Include="Enums\Mode.cs" />
+    <Compile Include="Interfaces\IStreakRepository.cs" />
     <Compile Include="Models\Bet.cs" />
     <Compile Include="Models\Match.cs" />
     <Compile Include="Models\Player.cs" />
+    <Compile Include="Models\PlayerStreak.cs" />
     <Compile Include="Models\Team.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Repositories\StreakRepository.cs" />
     <Compile Include="Services\BetModifierService.cs" />
     <Compile Include="Services\NameBasedRecommendationService.cs" />
     <Compile Include="Services\StatBasedRecommendationService.cs" />
+    <Compile Include="Services\StreakService.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
