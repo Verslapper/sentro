@@ -113,12 +113,15 @@ namespace Sentro
                         Console.WriteLine("{0}", message.Message);
                         lastStreak = message.Message;
                         var splits = message.Message.Split(new string[] { ") - $" }, StringSplitOptions.RemoveEmptyEntries);
-                        var redStreak = splits[0].Split('(').Last();
-                        var blueStreak = splits[1].Split('(').Last();
-                        var redSubset = splits[0].Replace("Bets are locked. ", "");
-                        var redName = redSubset.Substring(0, redSubset.LastIndexOf('(') - 1);
-                        var blueName = splits[1].Substring(0, splits[1].LastIndexOf('(') - 1);
-                        Console.WriteLine("{0}|{1}|{2}|{3}|{4}", redName, redStreak, blueName, match.Blue.Players.First().Name, blueStreak);
+                        if (splits.Length > 1)
+                        {
+                            var redStreak = splits[0].Split('(').Last();
+                            var blueStreak = splits[1].Split('(').Last();
+                            var redSubset = splits[0].Replace("Bets are locked. ", "");
+                            var redName = redSubset.Substring(0, redSubset.LastIndexOf('(') - 1);
+                            var blueName = splits[1].Substring(0, splits[1].LastIndexOf('(') - 1);
+                            Console.WriteLine("{0}|{1}|{2}|{3}|{4}|{5}", redName, match.Red.Players.First().Name, redStreak, blueName, match.Blue.Players.First().Name, blueStreak);
+                        }
                     }
                 }
             }
