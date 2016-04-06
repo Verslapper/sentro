@@ -18,6 +18,12 @@ namespace Sentro.Services
                 UPSET_POTENTIAL_DIFFERENCE = 5;
             }
 
+            int SOLID_FAVOURITE_DIFFERENCE;
+            if (!Int32.TryParse(ConfigurationManager.AppSettings["solidFavouriteDifference"], out SOLID_FAVOURITE_DIFFERENCE))
+            {
+                SOLID_FAVOURITE_DIFFERENCE = 40;
+            }
+
             int CLEAR_FAVOURITE_DIFFERENCE;
             if (!Int32.TryParse(ConfigurationManager.AppSettings["clearFavouriteDifference"], out CLEAR_FAVOURITE_DIFFERENCE))
             {
@@ -26,16 +32,33 @@ namespace Sentro.Services
 
             Team betOn;
             var wager = baseWager;
+            var multiplier = 1;
 
             if (red.Winrate - blue.Winrate > UPSET_POTENTIAL_DIFFERENCE)
             {
                 betOn = latestMatch.Red;
-                wager = red.Winrate - blue.Winrate > CLEAR_FAVOURITE_DIFFERENCE ? Math.Min(baseWager * 10, balance.HasValue ? balance.Value : baseWager * 10) : baseWager;
+                if (red.Winrate - blue.Winrate > CLEAR_FAVOURITE_DIFFERENCE)
+                {
+                    multiplier = 10;
+                }
+                else if (red.Winrate - blue.Winrate > SOLID_FAVOURITE_DIFFERENCE)
+                {
+                    multiplier = 3;
+                }
+                wager = Math.Min(baseWager * multiplier, balance.HasValue ? balance.Value : baseWager * multiplier);
             }
             else if (blue.Winrate - red.Winrate > UPSET_POTENTIAL_DIFFERENCE)
             {
                 betOn = latestMatch.Blue;
-                wager = blue.Winrate - red.Winrate > CLEAR_FAVOURITE_DIFFERENCE ? Math.Min(baseWager * 10, balance.HasValue ? balance.Value : baseWager * 10) : baseWager;
+                if (blue.Winrate - red.Winrate > CLEAR_FAVOURITE_DIFFERENCE)
+                {
+                    multiplier = 10;
+                }
+                else if (blue.Winrate - red.Winrate > SOLID_FAVOURITE_DIFFERENCE)
+                {
+                    multiplier = 3;
+                }
+                wager = Math.Min(baseWager * multiplier, balance.HasValue ? balance.Value : baseWager * multiplier);
             }
             else if (red.Meter - blue.Meter >= 500)
             {
