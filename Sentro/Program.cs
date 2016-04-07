@@ -35,7 +35,7 @@ namespace Sentro
                 return;
             }
             var cookieContainer = CreateCookieContainer(args);
-            var lastMatch = GetLatestMatch(cookieContainer);
+            var lastMatch = GetLatestStats(cookieContainer) ?? GetLatestMatch(cookieContainer);
             var lastStreak = string.Empty;
 
             int BASE_WAGER;
@@ -48,17 +48,16 @@ namespace Sentro
             {
                 lastStreak = GetChatHighlights(lastStreak, lastMatch);
 
-                var latestMatch = GetLatestMatch(cookieContainer);
+                var latestMatch = GetLatestStats(cookieContainer) ?? GetLatestMatch(cookieContainer); // REFACTOR: Have illum/non-illum in config + strategy pattern
                 if (latestMatch.CompareTo(lastMatch) != 0)
                 {
-                    var latestStats = GetLatestStats(cookieContainer) ?? latestMatch;
                     var mode = GetMode(cookieContainer);
-                    var bet = GetBet(latestStats, mode, BASE_WAGER, GetBalance(cookieContainer));
-                    var betOnRed = bet.Team == latestStats.Red;
+                    var bet = GetBet(latestMatch, mode, BASE_WAGER, GetBalance(cookieContainer));
+                    var betOnRed = bet.Team == latestMatch.Red;
                     var itsOn = PlaceBet(cookieContainer, betOnRed, bet.Wager, mode);
                     if (itsOn)
                     {
-                        Console.WriteLine("{0}, I choose you!", betOnRed ? latestStats.Red.Players.First().Name : latestStats.Blue.Players.First().Name);
+                        Console.WriteLine("{0}, I choose you!", betOnRed ? latestMatch.Red.Players.First().Name : latestMatch.Blue.Players.First().Name);
                         lastMatch = latestMatch;
                     }
                 }
@@ -120,8 +119,6 @@ namespace Sentro
                             var blueStreak = splits[1].Split('(').Last();
                             var redSubset = splits[0].Replace("Bets are locked. ", "");
                             var redName = redSubset.Substring(0, redSubset.LastIndexOf('(') - 1);
-                            var blueName = splits[1].Substring(0, splits[1].LastIndexOf('(') - 1);
-                            Console.WriteLine("{0}|{1}|{2}|{3}|{4}|{5}", redName, match.Red.Players.First().Name, redStreak, blueName, match.Blue.Players.First().Name, blueStreak);
                             if (redName == match.Red.Players.First().Name) // confirmed that waifu4u message refers to last round of betting
                             {
                                 _streakService.Save(new PlayerStreak { Player = match.Red.Players.First(), Streak = int.Parse(redStreak) });
@@ -247,7 +244,7 @@ namespace Sentro
                         Meter = int.Parse(dto.p1meter.Split('/').First().Trim()),
                         TotalMatches = int.Parse(dto.p1totalmatches.Split('/').First().Trim()),
                         Life = int.Parse(dto.p1life.Split('/').First().Trim()),
-                        Tier = dto.p1tier.Split('/').First().Trim(),
+                        Tier = !string.IsNullOrWhiteSpace(dto.p1tier.Split('/').First().Trim()) ? (Tier)Enum.Parse(typeof(Tier), dto.p1tier.Split('/').First().Trim()) : Tier.Unknown,
                         Author = dto.p1author.Split('/').First().Trim(),
                         Palette = int.Parse(dto.p1palette.Split('/').First().Trim()),
                     };
@@ -259,7 +256,7 @@ namespace Sentro
                         Meter = int.Parse(dto.p2meter.Split('/').First().Trim()),
                         TotalMatches = int.Parse(dto.p2totalmatches.Split('/').First().Trim()),
                         Life = int.Parse(dto.p2life.Split('/').First().Trim()),
-                        Tier = dto.p2tier.Split('/').First().Trim(),
+                        Tier = !string.IsNullOrWhiteSpace(dto.p2tier.Split('/').First().Trim()) ? (Tier)Enum.Parse(typeof(Tier), dto.p2tier.Split('/').First().Trim()) : Tier.Unknown,
                         Author = dto.p2author.Split('/').First().Trim(),
                         Palette = int.Parse(dto.p2palette.Split('/').First().Trim()),
                     };
@@ -281,7 +278,7 @@ namespace Sentro
                             Meter = int.Parse(dto.p1meter.Split('/').Last().Trim()),
                             TotalMatches = int.Parse(dto.p1totalmatches.Split('/').Last().Trim()),
                             Life = int.Parse(dto.p1life.Split('/').Last().Trim()),
-                            Tier = dto.p1tier.Split('/').Last().Trim(),
+                            Tier = !string.IsNullOrWhiteSpace(dto.p1tier.Split('/').Last().Trim()) ? (Tier)Enum.Parse(typeof(Tier), dto.p1tier.Split('/').Last().Trim()) : Tier.Unknown,
                             Author = dto.p1author.Split('/').Last().Trim(),
                             Palette = int.Parse(dto.p1palette.Split('/').Last().Trim()),
                         };
@@ -298,7 +295,7 @@ namespace Sentro
                             Meter = int.Parse(dto.p2meter.Split('/').Last().Trim()),
                             TotalMatches = int.Parse(dto.p2totalmatches.Split('/').Last().Trim()),
                             Life = int.Parse(dto.p2life.Split('/').Last().Trim()),
-                            Tier = dto.p2tier.Split('/').Last().Trim(),
+                            Tier = !string.IsNullOrWhiteSpace(dto.p2tier.Split('/').Last().Trim()) ? (Tier)Enum.Parse(typeof(Tier), dto.p2tier.Split('/').Last().Trim()) : Tier.Unknown,
                             Author = dto.p2author.Split('/').Last().Trim(),
                             Palette = int.Parse(dto.p2palette.Split('/').Last().Trim()),
                         };

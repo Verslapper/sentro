@@ -6,7 +6,7 @@ namespace Sentro.Services
 {
     public class StreakService
     {
-        private readonly IStreakRepository _streakRepository = new StreakRepository();
+        private readonly IStreakRepository _streakRepository = new FileStreakRepository();
 
         public void Save(PlayerStreak streak)
         {

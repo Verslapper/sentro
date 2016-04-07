@@ -56,7 +56,7 @@ namespace Sentro.Services
                 }
                 else if (redWinrate - blueWinrate > SOLID_FAVOURITE_DIFFERENCE)
                 {
-                    multiplier = 3;
+                    multiplier = 5;
                 }
                 wager = Math.Min(baseWager * multiplier, balance.HasValue ? balance.Value : baseWager * multiplier);
             }
@@ -69,7 +69,7 @@ namespace Sentro.Services
                 }
                 else if (blueWinrate - redWinrate > SOLID_FAVOURITE_DIFFERENCE)
                 {
-                    multiplier = 3;
+                    multiplier = 5;
                 }
                 wager = Math.Min(baseWager * multiplier, balance.HasValue ? balance.Value : baseWager * multiplier);
             }
