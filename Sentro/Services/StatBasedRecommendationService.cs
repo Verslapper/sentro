@@ -42,9 +42,39 @@ namespace Sentro.Services
 
             int redWinrate, blueWinrate;
             GetPlayerWinrates(match, out redWinrate, out blueWinrate);
+            
+            var redStreak = _streakService.GetStreaksFor(red.Name);
+            var blueStreak = _streakService.GetStreaksFor(blue.Name);
+            int? redRecentWinrate = null;
+            int? blueRecentWinrate = null;
+            if (redStreak.Count > 0)
+            {
+                var currentStreak = redStreak.LastOrDefault().Streak;
 
-            int? redRecentWinrate, blueRecentWinrate;
-            GetRecentWinrates(red, blue, out redRecentWinrate, out blueRecentWinrate);
+                if (currentStreak > 0)
+                {
+                    redRecentWinrate = (int) ((double)currentStreak / (currentStreak + 1) * 100);
+                }
+                else if (currentStreak < 0)
+                {
+                    redRecentWinrate = (int) ((double)1 / (-currentStreak + 1) * 100);
+                }
+
+                Console.WriteLine("{0} is currently on a {1} streak {2}", red.Name, currentStreak, redRecentWinrate);
+            }
+            if (blueStreak.Count > 0)
+            {
+                var currentStreak = blueStreak.LastOrDefault().Streak;
+                if (currentStreak > 0)
+                {
+                    blueRecentWinrate = (int)((double)currentStreak / (currentStreak + 1) * 100);
+                }
+                else if (currentStreak < 0)
+                {
+                    blueRecentWinrate = (int)((double)1 / (-currentStreak + 1) * 100);
+                }
+                Console.WriteLine("{0} is currently on a {1} streak", blue.Name, currentStreak);
+            }
 
             if (redRecentWinrate.HasValue)
             {
@@ -107,31 +137,6 @@ namespace Sentro.Services
             }
 
             return new Bet { Team = betOn, Wager = wager };
-        }
-
-        private void GetRecentWinrates(Player red, Player blue, out int? redRecentWinrate, out int? blueRecentWinrate)
-        {
-            var redStreak = _streakService.GetStreaksFor(red.Name);
-            var blueStreak = _streakService.GetStreaksFor(blue.Name);
-            redRecentWinrate = null;
-            blueRecentWinrate = null;
-            if (redStreak.Count > 0)
-            {
-                var currentStreak = redStreak.LastOrDefault().Streak;
-                redRecentWinrate = currentStreak > 0 ? currentStreak / (currentStreak + 1)
-                    : currentStreak < 0 ? 1 / (Math.Abs(currentStreak) + 1)
-                    : (int?)null; // TODO: Handle 0 and detect if promote or demote
-
-                Console.WriteLine("{0} is currently on a {1} streak", red.Name, currentStreak);
-            }
-            if (blueStreak.Count > 0)
-            {
-                var currentStreak = blueStreak.LastOrDefault().Streak;
-                blueRecentWinrate = currentStreak > 0 ? currentStreak / (currentStreak + 1)
-                    : currentStreak < 0 ? 1 / (Math.Abs(currentStreak) + 1)
-                    : (int?)null; // TODO: Handle 0 and detect if promote or demote
-                Console.WriteLine("{0} is currently on a {1} streak", blue.Name, currentStreak);
-            }
         }
 
         private static void GetPlayerWinrates(Match match, out int redWinrate, out int blueWinrate)
