@@ -1,4 +1,5 @@
 ﻿using Sentro.Models;
+using System.Collections.Generic;
 
 namespace Sentro.Interfaces
 {
@@ -7,5 +8,7 @@ namespace Sentro.Interfaces
         void Save(PlayerStreak streak);
 
         PlayerStreak Get(Player player);
+
+        Dictionary<string, List<PlayerStreak>> GetStreakData();
     }
 }

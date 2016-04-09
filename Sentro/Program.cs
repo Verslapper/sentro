@@ -20,10 +20,10 @@ namespace Sentro
 {
     class Program
     {
-        private static readonly NameBasedRecommendationService _nameBasedRecommendationService = new NameBasedRecommendationService();
-        private static readonly StatBasedRecommendationService _statBasedRecommendationService = new StatBasedRecommendationService();
-        private static readonly BetModifierService _betModifierService = new BetModifierService();
         private static readonly StreakService _streakService = new StreakService();
+        private static readonly NameBasedRecommendationService _nameBasedRecommendationService = new NameBasedRecommendationService();
+        private static readonly StatBasedRecommendationService _statBasedRecommendationService = new StatBasedRecommendationService(_streakService);
+        private static readonly BetModifierService _betModifierService = new BetModifierService();
 
         static void Main(string[] args)
         {
@@ -63,7 +63,7 @@ namespace Sentro
                 }
 
                 Console.WriteLine("{0}: ResidentSleeper", DateTime.Now);
-                Thread.Sleep(35000);
+                Thread.Sleep(30000);
             }
         }
 

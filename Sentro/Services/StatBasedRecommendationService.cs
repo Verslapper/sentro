@@ -7,44 +7,55 @@ namespace Sentro.Services
 {
     public class StatBasedRecommendationService
     {
-        public Bet GetRecommendedBet(Match match, int baseWager, int? balance)
+        private readonly StreakService _streakService;
+        private int UPSET_POTENTIAL_DIFFERENCE;
+        private int SOLID_FAVOURITE_DIFFERENCE;
+        private int CLEAR_FAVOURITE_DIFFERENCE;
+
+        public StatBasedRecommendationService(StreakService streakService)
         {
-            int UPSET_POTENTIAL_DIFFERENCE;
-            if (!Int32.TryParse(ConfigurationManager.AppSettings["upsetPotentialDifference"], out UPSET_POTENTIAL_DIFFERENCE))
+            _streakService = streakService;
+
+            if (!int.TryParse(ConfigurationManager.AppSettings["upsetPotentialDifference"], out UPSET_POTENTIAL_DIFFERENCE))
             {
                 UPSET_POTENTIAL_DIFFERENCE = 5;
             }
 
-            int SOLID_FAVOURITE_DIFFERENCE;
-            if (!Int32.TryParse(ConfigurationManager.AppSettings["solidFavouriteDifference"], out SOLID_FAVOURITE_DIFFERENCE))
+            if (!int.TryParse(ConfigurationManager.AppSettings["solidFavouriteDifference"], out SOLID_FAVOURITE_DIFFERENCE))
             {
                 SOLID_FAVOURITE_DIFFERENCE = 40;
             }
 
-            int CLEAR_FAVOURITE_DIFFERENCE;
-            if (!Int32.TryParse(ConfigurationManager.AppSettings["clearFavouriteDifference"], out CLEAR_FAVOURITE_DIFFERENCE))
+            if (!int.TryParse(ConfigurationManager.AppSettings["clearFavouriteDifference"], out CLEAR_FAVOURITE_DIFFERENCE))
             {
                 CLEAR_FAVOURITE_DIFFERENCE = 40;
             }
+        }
 
+        public Bet GetRecommendedBet(Match match, int baseWager, int? balance)
+        {
             Team betOn;
             var wager = baseWager;
             var multiplier = 1;
             var red = match.Red.Players.First();
             var blue = match.Blue.Players.First();
-            var redWinrate = match.Red.Players.First().Winrate;
-            if (match.Red.Players.Count == 2)
+
+            int redWinrate, blueWinrate;
+            GetPlayerWinrates(match, out redWinrate, out blueWinrate);
+
+            int? redRecentWinrate, blueRecentWinrate;
+            GetRecentWinrates(red, blue, out redRecentWinrate, out blueRecentWinrate);
+
+            if (redRecentWinrate.HasValue)
             {
-                redWinrate += match.Red.Players.Last().Winrate;
-                Console.WriteLine("Second red player has {0}%", match.Red.Players.Last().Winrate);
-                redWinrate = redWinrate / 2;
-                Console.WriteLine("Averaged red to {0}%", redWinrate);
+                redWinrate = (redWinrate + redRecentWinrate.Value) / 2;
+                Console.WriteLine("Adjusted {0} winrate to {1}", red.Name, redWinrate);
             }
-            var blueWinrate = match.Blue.Players.First().Winrate;
-            if (match.Blue.Players.Count == 2)
+
+            if (blueRecentWinrate.HasValue)
             {
-                blueWinrate += match.Blue.Players.Last().Winrate;
-                blueWinrate = blueWinrate / 2;
+                blueWinrate = (blueWinrate + blueRecentWinrate.Value) / 2;
+                Console.WriteLine("Adjusted {0} winrate to {1}+{2}={3}%", blue.Name, blue.Winrate, blueRecentWinrate, blueWinrate);
             }
 
             if (redWinrate - blueWinrate > UPSET_POTENTIAL_DIFFERENCE)
@@ -95,7 +106,50 @@ namespace Sentro.Services
                 wager = Math.Min(baseWager * 3, balance.HasValue ? balance.Value : baseWager * 3);
             }
 
-            return new Bet {Team = betOn, Wager = wager};
+            return new Bet { Team = betOn, Wager = wager };
+        }
+
+        private void GetRecentWinrates(Player red, Player blue, out int? redRecentWinrate, out int? blueRecentWinrate)
+        {
+            var redStreak = _streakService.GetStreaksFor(red.Name);
+            var blueStreak = _streakService.GetStreaksFor(blue.Name);
+            redRecentWinrate = null;
+            blueRecentWinrate = null;
+            if (redStreak.Count > 0)
+            {
+                var currentStreak = redStreak.LastOrDefault().Streak;
+                redRecentWinrate = currentStreak > 0 ? currentStreak / (currentStreak + 1)
+                    : currentStreak < 0 ? 1 / (Math.Abs(currentStreak) + 1)
+                    : (int?)null; // TODO: Handle 0 and detect if promote or demote
+
+                Console.WriteLine("{0} is currently on a {1} streak", red.Name, currentStreak);
+            }
+            if (blueStreak.Count > 0)
+            {
+                var currentStreak = blueStreak.LastOrDefault().Streak;
+                blueRecentWinrate = currentStreak > 0 ? currentStreak / (currentStreak + 1)
+                    : currentStreak < 0 ? 1 / (Math.Abs(currentStreak) + 1)
+                    : (int?)null; // TODO: Handle 0 and detect if promote or demote
+                Console.WriteLine("{0} is currently on a {1} streak", blue.Name, currentStreak);
+            }
+        }
+
+        private static void GetPlayerWinrates(Match match, out int redWinrate, out int blueWinrate)
+        {
+            redWinrate = match.Red.Players.First().Winrate;
+            if (match.Red.Players.Count == 2)
+            {
+                redWinrate += match.Red.Players.Last().Winrate;
+                Console.WriteLine("Second red player has {0}%", match.Red.Players.Last().Winrate);
+                redWinrate = redWinrate / 2;
+                Console.WriteLine("Averaged red to {0}%", redWinrate);
+            }
+            blueWinrate = match.Blue.Players.First().Winrate;
+            if (match.Blue.Players.Count == 2)
+            {
+                blueWinrate += match.Blue.Players.Last().Winrate;
+                blueWinrate = blueWinrate / 2;
+            }
         }
     }
 }
