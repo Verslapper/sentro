@@ -60,7 +60,7 @@ namespace Sentro.Services
                     redRecentWinrate = (int) ((double)1 / (-currentStreak + 1) * 100);
                 }
 
-                Console.WriteLine("{0} is currently on a {1} streak {2}", red.Name, currentStreak, redRecentWinrate);
+                Console.WriteLine("{0} is currently on a {1} streak", red.Name, currentStreak);
             }
             if (blueStreak.Count > 0)
             {
@@ -76,16 +76,12 @@ namespace Sentro.Services
                 Console.WriteLine("{0} is currently on a {1} streak", blue.Name, currentStreak);
             }
 
-            if (redRecentWinrate.HasValue)
+            if (redRecentWinrate.HasValue && blueRecentWinrate.HasValue)
             {
-                redWinrate = (redWinrate + redRecentWinrate.Value) / 2;
-                Console.WriteLine("Adjusted {0} winrate to {1}", red.Name, redWinrate);
-            }
-
-            if (blueRecentWinrate.HasValue)
-            {
-                blueWinrate = (blueWinrate + blueRecentWinrate.Value) / 2;
-                Console.WriteLine("Adjusted {0} winrate to {1}+{2}={3}%", blue.Name, blue.Winrate, blueRecentWinrate, blueWinrate);
+                //redWinrate = (redWinrate + redRecentWinrate.Value) / 2;
+                Console.WriteLine("Didn't adjust {0} winrate to {1}+{2}/2={3}%", red.Name, red.Winrate, redRecentWinrate, redWinrate);
+                //blueWinrate = (blueWinrate + blueRecentWinrate.Value) / 2;
+                Console.WriteLine("Didn't adjust {0} winrate to {1}+{2}/2={3}%", blue.Name, blue.Winrate, blueRecentWinrate, blueWinrate);
             }
 
             if (redWinrate - blueWinrate > UPSET_POTENTIAL_DIFFERENCE)

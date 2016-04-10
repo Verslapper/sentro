@@ -61,9 +61,8 @@ namespace Sentro
                         lastMatch = latestMatch;
                     }
                 }
-
-                Console.WriteLine("{0}: ResidentSleeper", DateTime.Now);
-                Thread.Sleep(30000);
+                
+                Thread.Sleep(25000);
             }
         }
 
@@ -157,7 +156,11 @@ namespace Sentro
                 var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
 
                 // Matchmaking returns 1 (success) or 0 (failure). Tourneys return a random number (4-5 digits) on success so dunno.
-                return mode != Mode.Tournament ? responseString == "1" : responseString != "0"; 
+                if (mode == Mode.Tournament)
+                {
+                    Console.WriteLine(responseString);
+                }
+                return mode != Mode.Tournament ? responseString == "1" : responseString.Length < 6; 
             }
             catch (Exception e)
             {
@@ -439,7 +442,8 @@ namespace Sentro
                     mode = Mode.Matchmaking;
                 }
                 else if (dto.remaining.Contains("characters left in the bracket") ||
-                         dto.remaining.Contains("Tournament mode has been"))
+                         dto.remaining.Contains("Tournament mode has been") ||
+                         dto.remaining.Contains("FINAL ROUND"))
                 {
                     mode = Mode.Tournament;
                 }
