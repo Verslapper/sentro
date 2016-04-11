@@ -228,7 +228,7 @@ namespace Sentro
             catch (Exception e)
             {
                 Console.WriteLine("Error around GetLatestStats request {0} {1} {2}", e.Message, e.InnerException, e.StackTrace);
-                throw;
+                return null;
             }
 
             if (!string.IsNullOrWhiteSpace(content))
