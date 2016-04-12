@@ -24,6 +24,7 @@ namespace Sentro
         private static readonly NameBasedRecommendationService _nameBasedRecommendationService = new NameBasedRecommendationService();
         private static readonly StatBasedRecommendationService _statBasedRecommendationService = new StatBasedRecommendationService(_streakService);
         private static readonly BetModifierService _betModifierService = new BetModifierService();
+        private static readonly BetService _betService = new BetService();
 
         static void Main(string[] args)
         {
@@ -52,13 +53,16 @@ namespace Sentro
                 if (latestMatch.CompareTo(lastMatch) != 0)
                 {
                     var mode = GetMode(cookieContainer);
-                    var bet = GetBet(latestMatch, mode, BASE_WAGER, GetBalance(cookieContainer));
+                    var balance = GetBalance(cookieContainer);
+                    var bet = GetBet(latestMatch, mode, BASE_WAGER, balance);
                     var betOnRed = bet.Team == latestMatch.Red;
                     var itsOn = PlaceBet(cookieContainer, betOnRed, bet.Wager, mode);
                     if (itsOn)
                     {
                         Console.WriteLine("{0}, I choose you!", betOnRed ? latestMatch.Red.Players.First().Name : latestMatch.Blue.Players.First().Name);
                         lastMatch = latestMatch;
+
+                        _betService.Save(bet, balance);
                     }
                 }
                 

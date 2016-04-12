@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Configuration;
 using Sentro.Interfaces;
 using Sentro.Models;
 using System.IO;
@@ -9,13 +10,20 @@ namespace Sentro.Repositories
 {
     internal class FileStreakRepository : IStreakRepository
     {
-        const string STREAK_FILE_NAME = "streaks.csv"; // REFACTOR: Get from config so we can link to Dropbox. If it's not being run in two places at once.
+        private readonly string STREAK_FILE_NAME = "streaks.csv";
+        public FileStreakRepository()
+        {
+            if (ConfigurationManager.AppSettings["saveStreaks"] != "false" && ConfigurationManager.AppSettings["baseFilePath"] != null)
+            {
+                STREAK_FILE_NAME = ConfigurationManager.AppSettings["baseFilePath"] + STREAK_FILE_NAME;
+            }
+        }
         
         public Dictionary<string, List<PlayerStreak>> GetStreakData()
         {
             var streakData = new Dictionary<string, List<PlayerStreak>>();
 
-            using (StreamReader reader = new StreamReader(STREAK_FILE_NAME))
+            using (var reader = new StreamReader(STREAK_FILE_NAME))
             {
                 string line;
                 while ((line = reader.ReadLine()) != null)
@@ -59,7 +67,7 @@ namespace Sentro.Repositories
         {
             PlayerStreak streak = null;
             var streakText = string.Empty;
-            using (StreamReader readtext = new StreamReader(STREAK_FILE_NAME))
+            using (var readtext = new StreamReader(STREAK_FILE_NAME))
             {
                 //string readMeText = readtext.ReadLine();
                 streakText = readtext.ReadToEnd();
@@ -76,9 +84,9 @@ namespace Sentro.Repositories
         public void Save(PlayerStreak streak)
         {
             // Remove , from player so CSV is maintained (thanks The manticore, the queen, and the dragon)
-            using (StreamWriter writetext = new StreamWriter(STREAK_FILE_NAME, true))
+            using (var writetext = new StreamWriter(STREAK_FILE_NAME, true))
             {
-                writetext.WriteLine(streak.Player.Name.Replace(",","") + "," + streak.Streak + "," + streak.Player.Tier + "," + streak.Player.Winrate + "," + DateTime.Now.Date);
+                writetext.WriteLine(streak.Player.Name.Replace(",","") + "," + streak.Streak + "," + streak.Player.Tier + "," + streak.Player.Winrate + "," + DateTime.Now);
             }
 
             Console.WriteLine("Saved {3}% {0} streak {1} in {2} tier to file", streak.Player.Name, streak.Streak, streak.Player.Tier, streak.Player.Winrate);
