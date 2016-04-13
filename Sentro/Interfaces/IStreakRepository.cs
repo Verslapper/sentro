@@ -7,8 +7,6 @@ namespace Sentro.Interfaces
     {
         void Save(PlayerStreak streak);
 
-        PlayerStreak Get(Player player);
-
         Dictionary<string, List<PlayerStreak>> GetStreakData();
     }
 }

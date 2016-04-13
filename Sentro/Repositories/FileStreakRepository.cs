@@ -57,30 +57,12 @@ namespace Sentro.Repositories
                         else
                         {
                             streakData.Add(player.Name, new List<PlayerStreak> { streak });
-                        };
+                        }
                     }
                 }
             }
 
             return streakData;
-        }
-
-        public PlayerStreak Get(Player player)
-        {
-            PlayerStreak streak = null;
-            var streakText = string.Empty;
-            using (var readtext = new StreamReader(STREAK_FILE_NAME))
-            {
-                //string readMeText = readtext.ReadLine();
-                streakText = readtext.ReadToEnd();
-            }
-
-            if (streakText.Contains(player.Name + ","))
-            {
-                Console.WriteLine("{0} is in our streak data file!", player.Name);
-            }
-
-            return streak;
         }
 
         public void Save(PlayerStreak streak)

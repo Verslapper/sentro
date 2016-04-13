@@ -42,6 +42,8 @@ namespace Sentro.Services
 
             int redWinrate, blueWinrate;
             GetPlayerWinrates(match, out redWinrate, out blueWinrate);
+
+            var initialFave = redWinrate > blueWinrate ? match.Red : match.Blue;
             
             var redStreak = _streakService.GetStreaksFor(red.Name);
             var blueStreak = _streakService.GetStreaksFor(blue.Name);
@@ -139,6 +141,16 @@ namespace Sentro.Services
             else if (blue.Life - red.Life >= 800)
             {
                 betOn = match.Blue;
+            }
+            else if (initialFave == match.Blue && blueWinrate < redWinrate) // if my stats pick a different winner to winrates
+            {
+                betOn = match.Red;
+                wager = Math.Min(baseWager * 4, balance.HasValue ? balance.Value : baseWager * 4);
+            }
+            else if (initialFave == match.Red && redWinrate < blueWinrate) // if my stats pick a different winner to winrates
+            {
+                betOn = match.Blue;
+                wager = Math.Min(baseWager * 4, balance.HasValue ? balance.Value : baseWager * 4);
             }
             else // this bets upset by default in close matches
             {

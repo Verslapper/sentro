@@ -364,11 +364,13 @@ namespace Sentro
                     var redCaptain = new Player
                     {
                         Name = dto.p1name.Split('/').First().Trim(),
+                        Tier = Tier.Unknown,
                     };
 
                     var blueCaptain = new Player
                     {
                         Name = dto.p2name.Split('/').First().Trim(),
+                        Tier = Tier.Unknown,
                     };
 
                     match = new Match
@@ -384,6 +386,7 @@ namespace Sentro
                         redSidekick = new Player
                         {
                             Name = dto.p1name.Split('/').Last().Trim(),
+                            Tier = Tier.Unknown,
                         };
                     }
 
@@ -394,6 +397,7 @@ namespace Sentro
                         blueSidekick = new Player
                         {
                             Name = dto.p2name.Split('/').Last().Trim(),
+                            Tier = Tier.Unknown,
                         };
                     }
 

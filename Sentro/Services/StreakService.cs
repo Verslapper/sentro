@@ -8,7 +8,7 @@ namespace Sentro.Services
     public class StreakService
     {
         private readonly IStreakRepository _streakRepository = new FileStreakRepository();
-        private Dictionary<string, List<PlayerStreak>> _streakData = new Dictionary<string, List<PlayerStreak>>();
+        private readonly Dictionary<string, List<PlayerStreak>> _streakData = new Dictionary<string, List<PlayerStreak>>();
 
         public StreakService()
         {
