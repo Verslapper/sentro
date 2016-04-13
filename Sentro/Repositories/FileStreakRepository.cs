@@ -41,10 +41,12 @@ namespace Sentro.Repositories
                         {
                             player.Winrate = int.Parse(parts[3]);
                         }
-                        if (parts.Length > 4)
+                        DateTime streakDate;
+                        if (parts.Length > 4 && DateTime.TryParse(parts[4], out streakDate))
                         {
-                            streak.Date = DateTime.Parse(parts[4]);
+                            streak.Date = streakDate;
                         }
+                        streak.Player = player;
 
                         List<PlayerStreak> existingStreak;
                         if (streakData.TryGetValue(player.Name, out existingStreak))

@@ -50,38 +50,52 @@ namespace Sentro.Services
             if (redStreak.Count > 0)
             {
                 var currentStreak = redStreak.LastOrDefault().Streak;
+                var bestStreak = redStreak.Max(s => s == null ? 0 : s.Streak);
+                var worstStreak = redStreak.Min(s => s == null ? 0 : s.Streak);
+                var streakDiff = bestStreak + worstStreak;
 
-                if (currentStreak > 0)
+                var streakToUse = streakDiff;
+                if (streakToUse > 0)
                 {
-                    redRecentWinrate = (int) ((double)currentStreak / (currentStreak + 1) * 100);
+                    redRecentWinrate = (int)((double)streakToUse / (streakToUse + 1) * 100);
                 }
-                else if (currentStreak < 0)
+                else if (streakToUse < 0)
                 {
-                    redRecentWinrate = (int) ((double)1 / (-currentStreak + 1) * 100);
+                    redRecentWinrate = (int)((double)1 / (-streakToUse + 1) * 100);
                 }
 
                 Console.WriteLine("{0} is currently on a {1} streak", red.Name, currentStreak);
             }
+
             if (blueStreak.Count > 0)
             {
                 var currentStreak = blueStreak.LastOrDefault().Streak;
-                if (currentStreak > 0)
+                var bestStreak = blueStreak.Where(s => s.Player.Tier == match.Blue.Players.First().Tier).Max(s => s == null ? 0 : s.Streak);
+                var worstStreak = blueStreak.Min(s => s == null ? 0 : s.Streak);
+                var streakDiff = bestStreak + worstStreak;
+
+                var streakToUse = streakDiff;
+                if (streakToUse > 0)
                 {
-                    blueRecentWinrate = (int)((double)currentStreak / (currentStreak + 1) * 100);
+                    blueRecentWinrate = (int)((double)streakToUse / (streakToUse + 1) * 100);
                 }
-                else if (currentStreak < 0)
+                else if (streakToUse < 0)
                 {
-                    blueRecentWinrate = (int)((double)1 / (-currentStreak + 1) * 100);
+                    blueRecentWinrate = (int)((double)1 / (-streakToUse + 1) * 100);
                 }
                 Console.WriteLine("{0} is currently on a {1} streak", blue.Name, currentStreak);
             }
 
-            if (redRecentWinrate.HasValue && blueRecentWinrate.HasValue)
+            if (redRecentWinrate.HasValue)
             {
-                //redWinrate = (redWinrate + redRecentWinrate.Value) / 2;
-                Console.WriteLine("Didn't adjust {0} winrate to {1}+{2}/2={3}%", red.Name, red.Winrate, redRecentWinrate, redWinrate);
-                //blueWinrate = (blueWinrate + blueRecentWinrate.Value) / 2;
-                Console.WriteLine("Didn't adjust {0} winrate to {1}+{2}/2={3}%", blue.Name, blue.Winrate, blueRecentWinrate, blueWinrate);
+                redWinrate = (redWinrate + redRecentWinrate.Value) / 2;
+                Console.WriteLine("Adjusted {0} winrate to {1}+{2}/2={3}%", red.Name, red.Winrate, redRecentWinrate, redWinrate);
+            }
+
+            if (blueRecentWinrate.HasValue)
+            {
+                blueWinrate = (blueWinrate + blueRecentWinrate.Value) / 2;
+                Console.WriteLine("Adjusted {0} winrate to {1}+{2}/2={3}%", blue.Name, blue.Winrate, blueRecentWinrate, blueWinrate);
             }
 
             if (redWinrate - blueWinrate > UPSET_POTENTIAL_DIFFERENCE)

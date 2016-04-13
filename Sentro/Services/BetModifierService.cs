@@ -36,7 +36,6 @@ namespace Sentro.Services
                 EXHIBS_BASE_WAGER = 1;
             }
 
-            // Go conservative for exhibs
             if (mode == Mode.Exhibitions)
             {
                 bet.Wager = EXHIBS_BASE_WAGER;
@@ -44,13 +43,13 @@ namespace Sentro.Services
 
             if (mode == Mode.Tournament && balance.HasValue && balance.Value < TOURNEY_ALL_IN_UNTIL)
             {
-                Console.WriteLine("Pump it up! ${0} It's tourney time!", balance.Value);
+                Console.WriteLine("Pump it up! It's tourney time! {0} Bison Dollars!", balance.Value);
                 bet.Wager = balance.Value;
             }
             else if (balance.HasValue && balance.Value < MINES_ALL_IN_UNTIL)
             {
                 bet.Team = match.Blue.Players.First().Winrate <= match.Red.Players.First().Winrate ? match.Blue : match.Red; // bet underdog
-                Console.WriteLine("We in the jungle baby, you goin' ${0} all in on the shitty one, {1}!", balance.Value, bet.Team.Players.First().Name);
+                Console.WriteLine("We in the jungle baby, you gonna {1}! ${0}", balance.Value, bet.Team.Players.First().Name);
                 bet.Wager = balance.Value;
             }
 

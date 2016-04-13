@@ -18,6 +18,19 @@ namespace Sentro.Services
         public void Save(PlayerStreak streak)
         {
             _streakRepository.Save(streak);
+
+            // save to memory too
+            var streaks = GetStreaksFor(streak.Player.Name);
+            if (streaks.Count == 0)
+            {
+                streaks.Add(streak);
+                _streakData.Add(streak.Player.Name, streaks);
+            }
+            else
+            {
+                streaks.Add(streak);
+                _streakData[streak.Player.Name] = streaks;
+            }
         }
 
         public List<PlayerStreak> GetStreaksFor(string playerName)

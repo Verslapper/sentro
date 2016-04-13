@@ -65,8 +65,10 @@ namespace Sentro
                         _betService.Save(bet, balance);
                     }
                 }
-                
-                Thread.Sleep(25000);
+
+                Thread.Sleep(12500);
+                lastStreak = GetChatHighlights(lastStreak, lastMatch);
+                Thread.Sleep(12500);
             }
         }
 
@@ -164,7 +166,7 @@ namespace Sentro
                 {
                     Console.WriteLine(responseString);
                 }
-                return mode != Mode.Tournament ? responseString == "1" : responseString.Length < 6; 
+                return mode == Mode.Tournament ? responseString == wager + "1" : responseString == "1"; 
             }
             catch (Exception e)
             {
@@ -445,8 +447,8 @@ namespace Sentro
                 {
                     mode = Mode.Matchmaking;
                 }
-                else if (dto.remaining.Contains("characters left in the bracket") ||
-                         dto.remaining.Contains("Tournament mode has been") ||
+                else if (dto.remaining.Contains("characters are left in the bracket") ||
+                         dto.remaining.Contains("Tournament mode start") ||
                          dto.remaining.Contains("FINAL ROUND"))
                 {
                     mode = Mode.Tournament;
