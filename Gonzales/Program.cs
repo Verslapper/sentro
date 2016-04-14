@@ -84,6 +84,11 @@ namespace Gonzales
                 var nodes = doc.DocumentNode.SelectNodes(".//*/table/tbody/tr");
                 foreach (var node in nodes)
                 {
+                    var playerNode = node.SelectSingleNode("/td[1]");
+                    var red = node.SelectSingleNode("/redtext").InnerText;
+                    var blue = node.SelectSingleNode("/bluetext").InnerText;
+                    var winner = node.SelectSingleNode("/td[2]").InnerText;
+
                     //<tr class="odd">
                     //    < td class=" "><a href = "stats?match_id=510935" >< span class="redtext">Existence-less</span> - $1194657, <span class="bluetext">Guts</span> - $437387</a></td>
                     //    <td class=" "><span class="bluetext">Guts</span></td>
