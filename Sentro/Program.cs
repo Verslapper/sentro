@@ -62,7 +62,11 @@ namespace Sentro
                         Console.WriteLine("{0}, I choose you!", betOnRed ? latestMatch.Red.Players.First().Name : latestMatch.Blue.Players.First().Name);
                         lastMatch = latestMatch;
 
-                        _betService.Save(bet, balance);
+                        // until we can track profits better than next match's balance - this match's balance, let's only log during matchmaking
+                        if (mode == Mode.Matchmaking)
+                        {
+                            _betService.Save(bet, balance);
+                        }
                     }
                 }
 
