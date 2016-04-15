@@ -35,7 +35,7 @@ namespace Sentro.Repositories
                         {
                             ranks.Add(parts[1], rank++);
                         }
-                        catch (Exception e)
+                        catch (Exception)
                         {
                             Console.WriteLine("Bad rank data is {0}", parts[1]);
                         }

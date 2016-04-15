@@ -52,9 +52,11 @@ namespace Sentro.Services
             if (redStreak.Count > 0)
             {
                 var currentStreak = redStreak.LastOrDefault().Streak;
+                Console.WriteLine("{0} is currently on a {1} streak", red.Name, currentStreak);
                 var bestStreak = redStreak.Max(s => s == null ? 0 : s.Streak);
                 var worstStreak = redStreak.Min(s => s == null ? 0 : s.Streak);
-                var streakDiff = bestStreak + worstStreak;
+                var streakDiff = bestStreak > 0 && worstStreak < 0 ? bestStreak + worstStreak : (bestStreak + worstStreak) / 2;
+                Console.WriteLine("{0}: best {1}, worst {2}, diff {3}", red.Name, bestStreak, worstStreak, streakDiff);
 
                 var streakToUse = streakDiff;
                 if (streakToUse > 0)
@@ -65,16 +67,16 @@ namespace Sentro.Services
                 {
                     redRecentWinrate = (int)((double)1 / (-streakToUse + 1) * 100);
                 }
-
-                Console.WriteLine("{0} is currently on a {1} streak", red.Name, currentStreak);
             }
 
             if (blueStreak.Count > 0)
             {
                 var currentStreak = blueStreak.LastOrDefault().Streak;
+                Console.WriteLine("{0} is currently on a {1} streak", blue.Name, currentStreak);
                 var bestStreak = blueStreak.Where(s => s.Player.Tier == match.Blue.Players.First().Tier).Max(s => s == null ? 0 : s.Streak);
                 var worstStreak = blueStreak.Min(s => s == null ? 0 : s.Streak);
-                var streakDiff = bestStreak + worstStreak;
+                var streakDiff = bestStreak > 0 && worstStreak < 0 ? bestStreak + worstStreak : (bestStreak + worstStreak) / 2;
+                Console.WriteLine("{0}: best {1}, worst {2}, diff {3}", blue.Name, bestStreak, worstStreak, streakDiff);
 
                 var streakToUse = streakDiff;
                 if (streakToUse > 0)
@@ -85,7 +87,6 @@ namespace Sentro.Services
                 {
                     blueRecentWinrate = (int)((double)1 / (-streakToUse + 1) * 100);
                 }
-                Console.WriteLine("{0} is currently on a {1} streak", blue.Name, currentStreak);
             }
 
             if (redRecentWinrate.HasValue)
