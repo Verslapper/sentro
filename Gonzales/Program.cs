@@ -1,11 +1,12 @@
-﻿using Gonzales.Models;
-using HtmlAgilityPack;
+﻿using HtmlAgilityPack;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Text.RegularExpressions;
+using Match = Gonzales.Models.Match;
 
 namespace Gonzales
 {
@@ -24,7 +25,7 @@ namespace Gonzales
             }
             var cookieContainer = CreateCookieContainer(args);
 
-            var tournamentId = 8831;
+            var tournamentId = 8871;
 
             while (tournamentId >= 70) // sketchy data and IRL players before 70 (Shaker Classic #2)
             {
@@ -84,11 +85,15 @@ namespace Gonzales
                 var nodes = doc.DocumentNode.SelectNodes(".//*/table/tbody/tr");
                 foreach (var node in nodes)
                 {
-                    var playerNode = node.SelectSingleNode("/td[1]");
-                    var red = node.SelectSingleNode("/redtext").InnerText;
-                    var blue = node.SelectSingleNode("/bluetext").InnerText;
-                    var winner = node.SelectSingleNode("/td[2]").InnerText;
-
+                    var red = node.SelectSingleNode("//span[@class='redtext']").InnerText;
+                    var blue = node.SelectSingleNode("//span[@class='bluetext']").InnerText;
+                    var regex = new Regex(@"- \$\d+");
+                    var betTotals = regex.Matches(node.SelectSingleNode("//td[1]").InnerText);
+                    var winner = node.SelectSingleNode("//td[2]").InnerText;
+                    var startTime = DateTime.Parse(node.SelectSingleNode("//td[3]").InnerText);
+                    var endTime = DateTime.Parse(node.SelectSingleNode("//td[4]").InnerText);
+                    var duration = endTime - startTime;
+                    var bettors = int.Parse(node.SelectSingleNode("//td[5]").InnerText);
                     //<tr class="odd">
                     //    < td class=" "><a href = "stats?match_id=510935" >< span class="redtext">Existence-less</span> - $1194657, <span class="bluetext">Guts</span> - $437387</a></td>
                     //    <td class=" "><span class="bluetext">Guts</span></td>
@@ -96,10 +101,25 @@ namespace Gonzales
                     //    <td class=" ">5:57am</td>
                     //    <td class=" ">229</td>
                     //</tr>
-                    //matches.Add(new Match
-                    //{
 
-                    //});
+                    var match = new Match
+                    {
+                        Red = red,
+                        Blue = blue,
+                        Winner = winner,
+                        Duration = duration,
+                        Bettors = bettors,
+                    };
+
+                    if (betTotals.Count == 2)
+                    {
+                        match.RedTotalBetted = int.Parse(Regex.Replace(betTotals[0].Value, @"[^\d]", ""));
+                        match.BlueTotalBetted = int.Parse(Regex.Replace(betTotals[1].Value, @"[^\d]", ""));
+                    }
+
+                    Console.WriteLine("{0} (${1}) vs {2} (${3}) among {6} bettors => won by {4} in {5} minutes", red, match.RedTotalBetted, blue, match.BlueTotalBetted, winner, duration.Minutes, bettors);
+
+                    matches.Add(match);
                 }
             }
             return matches;

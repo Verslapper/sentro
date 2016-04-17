@@ -23,43 +23,50 @@ namespace Sentro.Repositories
         {
             var streakData = new Dictionary<string, List<PlayerStreak>>();
 
-            using (var reader = new StreamReader(STREAK_FILE_NAME))
+            try
             {
-                string line;
-                while ((line = reader.ReadLine()) != null)
+                using (var reader = new StreamReader(STREAK_FILE_NAME))
                 {
-                    var parts = line.Split(',');
-                    if (parts.Length > 1)
+                    string line;
+                    while ((line = reader.ReadLine()) != null)
                     {
-                        var player = new Player { Name = parts[0] };
-                        var streak = new PlayerStreak { Streak = int.Parse(parts[1]) };
-                        if (parts.Length > 2)
+                        var parts = line.Split(',');
+                        if (parts.Length > 1)
                         {
-                            player.Tier = (Tier)Enum.Parse(typeof(Tier), parts[2]);
-                        }
-                        if (parts.Length > 3)
-                        {
-                            player.Winrate = int.Parse(parts[3]);
-                        }
-                        DateTime streakDate;
-                        if (parts.Length > 4 && DateTime.TryParse(parts[4], out streakDate))
-                        {
-                            streak.Date = streakDate;
-                        }
-                        streak.Player = player;
+                            var player = new Player { Name = parts[0] };
+                            var streak = new PlayerStreak { Streak = int.Parse(parts[1]) };
+                            if (parts.Length > 2)
+                            {
+                                player.Tier = (Tier)Enum.Parse(typeof(Tier), parts[2]);
+                            }
+                            if (parts.Length > 3)
+                            {
+                                player.Winrate = int.Parse(parts[3]);
+                            }
+                            DateTime streakDate;
+                            if (parts.Length > 4 && DateTime.TryParse(parts[4], out streakDate))
+                            {
+                                streak.Date = streakDate;
+                            }
+                            streak.Player = player;
 
-                        List<PlayerStreak> existingStreak;
-                        if (streakData.TryGetValue(player.Name, out existingStreak))
-                        {
-                            existingStreak.Add(streak);
-                            streakData[player.Name] = existingStreak;
-                        }
-                        else
-                        {
-                            streakData.Add(player.Name, new List<PlayerStreak> { streak });
+                            List<PlayerStreak> existingStreak;
+                            if (streakData.TryGetValue(player.Name, out existingStreak))
+                            {
+                                existingStreak.Add(streak);
+                                streakData[player.Name] = existingStreak;
+                            }
+                            else
+                            {
+                                streakData.Add(player.Name, new List<PlayerStreak> { streak });
+                            }
                         }
                     }
                 }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Couldn't read streak data from file: {0} {1} {2}", e.Message, e.InnerException, e.StackTrace);
             }
 
             return streakData;

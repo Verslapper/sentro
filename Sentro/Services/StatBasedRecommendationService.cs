@@ -44,18 +44,20 @@ namespace Sentro.Services
             GetPlayerWinrates(match, out redWinrate, out blueWinrate);
 
             var initialFave = redWinrate > blueWinrate ? match.Red : match.Blue;
+            Console.WriteLine("Winrate favourite: {0}", initialFave.Players.First().Name);
             
-            var redStreak = _streakService.GetStreaksFor(red.Name);
-            var blueStreak = _streakService.GetStreaksFor(blue.Name);
+            var redStreaks = _streakService.GetStreaksFor(red.Name);
+            var blueStreaks = _streakService.GetStreaksFor(blue.Name);
             int? redRecentWinrate = null;
             int? blueRecentWinrate = null;
-            if (redStreak.Count > 0)
+            if (redStreaks.Count > 0)
             {
-                var currentStreak = redStreak.LastOrDefault().Streak;
+                var currentStreak = redStreaks.LastOrDefault().Streak;
                 Console.WriteLine("{0} is currently on a {1} streak", red.Name, currentStreak);
-                var bestStreak = redStreak.Max(s => s == null ? 0 : s.Streak);
-                var worstStreak = redStreak.Min(s => s == null ? 0 : s.Streak);
-                var streakDiff = bestStreak > 0 && worstStreak < 0 ? bestStreak + worstStreak : (bestStreak + worstStreak) / 2;
+                var bestStreak = redStreaks.Max(s => s == null ? 0 : s.Streak);
+                var worstStreak = redStreaks.Min(s => s == null ? 0 : s.Streak);
+
+                var streakDiff = bestStreak > 0 && worstStreak < 0 ? bestStreak + worstStreak : bestStreak > 0 ? bestStreak : worstStreak;
                 Console.WriteLine("{0}: best {1}, worst {2}, diff {3}", red.Name, bestStreak, worstStreak, streakDiff);
 
                 var streakToUse = streakDiff;
@@ -69,13 +71,13 @@ namespace Sentro.Services
                 }
             }
 
-            if (blueStreak.Count > 0)
+            if (blueStreaks.Count > 0)
             {
-                var currentStreak = blueStreak.LastOrDefault().Streak;
+                var currentStreak = blueStreaks.LastOrDefault().Streak;
                 Console.WriteLine("{0} is currently on a {1} streak", blue.Name, currentStreak);
-                var bestStreak = blueStreak.Where(s => s.Player.Tier == match.Blue.Players.First().Tier).Max(s => s == null ? 0 : s.Streak);
-                var worstStreak = blueStreak.Min(s => s == null ? 0 : s.Streak);
-                var streakDiff = bestStreak > 0 && worstStreak < 0 ? bestStreak + worstStreak : (bestStreak + worstStreak) / 2;
+                var bestStreak = blueStreaks.Max(s => s == null ? 0 : s.Streak); // TODO: For relevant tier when not null
+                var worstStreak = blueStreaks.Min(s => s == null ? 0 : s.Streak);
+                var streakDiff = bestStreak > 0 && worstStreak < 0 ? bestStreak + worstStreak : bestStreak > 0 ? bestStreak : worstStreak;
                 Console.WriteLine("{0}: best {1}, worst {2}, diff {3}", blue.Name, bestStreak, worstStreak, streakDiff);
 
                 var streakToUse = streakDiff;
@@ -101,7 +103,21 @@ namespace Sentro.Services
                 Console.WriteLine("Adjusted {0} winrate to {1}+{2}/2={3}%", blue.Name, blue.Winrate, blueRecentWinrate, blueWinrate);
             }
 
-            if (redWinrate - blueWinrate > UPSET_POTENTIAL_DIFFERENCE)
+            Console.WriteLine("Favourite after stats adjustment is {0}", redWinrate > blueWinrate ? red.Name : blue.Name);
+
+            if (initialFave == match.Blue && blueWinrate < redWinrate) // if my stats pick a different winner to winrates
+            {
+                Console.WriteLine("Flip bet to red");
+                betOn = match.Red;
+                wager = Math.Min(baseWager * 4, balance.HasValue ? balance.Value : baseWager * 4);
+            }
+            else if (initialFave == match.Red && redWinrate < blueWinrate) // if my stats pick a different winner to winrates
+            {
+                Console.WriteLine("Flip bet to blue");
+                betOn = match.Blue;
+                wager = Math.Min(baseWager * 4, balance.HasValue ? balance.Value : baseWager * 4);
+            }
+            else if (redWinrate - blueWinrate > UPSET_POTENTIAL_DIFFERENCE)
             {
                 betOn = match.Red;
                 if (redWinrate - blueWinrate > CLEAR_FAVOURITE_DIFFERENCE)
@@ -142,16 +158,6 @@ namespace Sentro.Services
             else if (blue.Life - red.Life >= 800)
             {
                 betOn = match.Blue;
-            }
-            else if (initialFave == match.Blue && blueWinrate < redWinrate) // if my stats pick a different winner to winrates
-            {
-                betOn = match.Red;
-                wager = Math.Min(baseWager * 4, balance.HasValue ? balance.Value : baseWager * 4);
-            }
-            else if (initialFave == match.Red && redWinrate < blueWinrate) // if my stats pick a different winner to winrates
-            {
-                betOn = match.Blue;
-                wager = Math.Min(baseWager * 4, balance.HasValue ? balance.Value : baseWager * 4);
             }
             else // this bets upset by default in close matches
             {

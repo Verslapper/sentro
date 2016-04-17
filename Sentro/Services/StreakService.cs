@@ -16,7 +16,7 @@ namespace Sentro.Services
         }
 
         public void Save(PlayerStreak streak)
-        {
+        {    
             _streakRepository.Save(streak);
 
             // save to memory too

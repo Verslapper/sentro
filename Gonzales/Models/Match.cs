@@ -6,9 +6,10 @@ namespace Gonzales.Models
     {
         public string Red { get; set; }
         public string Blue { get; set; }
-        public int RedTotalBets { get; set; }
-        public int BlueTotalBets { get; set; }
+        public int RedTotalBetted { get; set; }
+        public int BlueTotalBetted { get; set; }
         public string Winner { get; set; }
         public TimeSpan Duration { get; set; }
+        public int Bettors { get; set; }
     }
 }
